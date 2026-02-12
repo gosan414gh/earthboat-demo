@@ -8,7 +8,7 @@ const geistSans = Geist({
 });
 
 export const metadata: Metadata = {
-  title: "Earthboat | サウナと自然と、旅をしよう。",
+  title: "Earthboat | すべての人に大自然を",
   description:
     "Earthboatは、移動できるサウナ付きタイニーハウス。自然の中で暮らすように旅する、新しい体験を届けます。",
   robots: {
