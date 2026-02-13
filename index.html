@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Analog Clock</title>
+<style>
+  *, *::before, *::after {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html, body {
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background: transparent;
+    font-family: -apple-system, BlinkMacSystemFont, 'Helvetica Neue', sans-serif;
+  }
+
+  body {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .clock-container {
+    position: relative;
+    width: 320px;
+    height: 320px;
+    -webkit-app-region: drag;
+    app-region: drag;
+    cursor: grab;
+  }
+
+  .clock-container:active {
+    cursor: grabbing;
+  }
+
+  .clock-glass {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: rgba(28, 30, 34, 0.72);
+    backdrop-filter: blur(40px) saturate(1.4);
+    -webkit-backdrop-filter: blur(40px) saturate(1.4);
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.45),
+      0 12px 40px rgba(0, 0, 0, 0.35),
+      inset 0 1px 0 rgba(255, 255, 255, 0.06),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.15);
+    border: 0.5px solid rgba(255, 255, 255, 0.08);
+  }
+
+  .clock-svg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+</style>
+</head>
+<body>
+
+<div class="clock-container">
+  <div class="clock-glass"></div>
+  <svg class="clock-svg" viewBox="0 0 320 320" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <!-- Hour hand gradient -->
+      <linearGradient id="handGradient" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0%" stop-color="rgba(255,255,255,0.85)" />
+        <stop offset="100%" stop-color="rgba(220,220,225,0.95)" />
+      </linearGradient>
+
+      <!-- Drop shadow for hands -->
+      <filter id="handShadow" x="-20%" y="-20%" width="140%" height="140%">
+        <feDropShadow dx="0" dy="1" stdDeviation="1.5" flood-color="rgba(0,0,0,0.5)" />
+      </filter>
+
+      <!-- Drop shadow for second hand -->
+      <filter id="secShadow" x="-20%" y="-20%" width="140%" height="140%">
+        <feDropShadow dx="0" dy="0.5" stdDeviation="0.8" flood-color="rgba(0,0,0,0.45)" />
+      </filter>
+
+      <!-- Subtle inner glow on face -->
+      <radialGradient id="faceGlow" cx="50%" cy="38%" r="55%">
+        <stop offset="0%" stop-color="rgba(255,255,255,0.03)" />
+        <stop offset="100%" stop-color="rgba(255,255,255,0)" />
+      </radialGradient>
+    </defs>
+
+    <!-- Subtle face glow overlay -->
+    <circle cx="160" cy="160" r="158" fill="url(#faceGlow)" />
+
+    <!-- Minute tick marks (60 ticks) -->
+    <g id="minute-ticks"></g>
+
+    <!-- Hour markers (12 dots) -->
+    <g id="hour-markers"></g>
+
+    <!-- Hour hand -->
+    <g id="hour-hand" filter="url(#handShadow)">
+      <line x1="160" y1="160" x2="160" y2="72"
+            stroke="rgba(255,255,255,0.92)"
+            stroke-width="5.5"
+            stroke-linecap="round" />
+    </g>
+
+    <!-- Minute hand -->
+    <g id="minute-hand" filter="url(#handShadow)">
+      <line x1="160" y1="160" x2="160" y2="44"
+            stroke="rgba(255,255,255,0.92)"
+            stroke-width="3.5"
+            stroke-linecap="round" />
+    </g>
+
+    <!-- Second hand -->
+    <g id="second-hand" filter="url(#secShadow)">
+      <!-- Tail (counterweight) -->
+      <line x1="160" y1="160" x2="160" y2="190"
+            stroke="#E8762B"
+            stroke-width="2"
+            stroke-linecap="round" />
+      <!-- Main shaft -->
+      <line x1="160" y1="160" x2="160" y2="48"
+            stroke="#E8762B"
+            stroke-width="1.5"
+            stroke-linecap="round" />
+    </g>
+
+    <!-- Center cap -->
+    <circle cx="160" cy="160" r="5" fill="#E8762B" />
+    <circle cx="160" cy="160" r="2.2" fill="#C05E1E" />
+  </svg>
+</div>
+
+<script>
+(function () {
+  const CX = 160;
+  const CY = 160;
+  const FACE_R = 140; // radius of tick/marker placement
+
+  // ---- Generate minute ticks ----
+  const ticksGroup = document.getElementById('minute-ticks');
+  for (let i = 0; i < 60; i++) {
+    const angle = (i * 6 - 90) * (Math.PI / 180);
+    const isHour = i % 5 === 0;
+    // Skip hour positions — those get dots instead
+    if (isHour) continue;
+
+    const outerR = FACE_R + 2;
+    const innerR = FACE_R - 4;
+    const x1 = CX + outerR * Math.cos(angle);
+    const y1 = CY + outerR * Math.sin(angle);
+    const x2 = CX + innerR * Math.cos(angle);
+    const y2 = CY + innerR * Math.sin(angle);
+
+    const tick = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    tick.setAttribute('x1', x1.toFixed(2));
+    tick.setAttribute('y1', y1.toFixed(2));
+    tick.setAttribute('x2', x2.toFixed(2));
+    tick.setAttribute('y2', y2.toFixed(2));
+    tick.setAttribute('stroke', 'rgba(255,255,255,0.25)');
+    tick.setAttribute('stroke-width', '0.8');
+    tick.setAttribute('stroke-linecap', 'round');
+    ticksGroup.appendChild(tick);
+  }
+
+  // ---- Generate hour markers (dots) ----
+  const markersGroup = document.getElementById('hour-markers');
+  for (let i = 0; i < 12; i++) {
+    const angle = (i * 30 - 90) * (Math.PI / 180);
+    const isCardinal = i % 3 === 0; // 12, 3, 6, 9
+    const r = isCardinal ? 4.0 : 2.8;
+    const markerR = FACE_R - 1;
+    const cx = CX + markerR * Math.cos(angle);
+    const cy = CY + markerR * Math.sin(angle);
+
+    const dot = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+    dot.setAttribute('cx', cx.toFixed(2));
+    dot.setAttribute('cy', cy.toFixed(2));
+    dot.setAttribute('r', r);
+    dot.setAttribute('fill', isCardinal ? 'rgba(255,255,255,0.92)' : 'rgba(255,255,255,0.72)');
+    markersGroup.appendChild(dot);
+  }
+
+  // ---- Clock animation (sweep) ----
+  const hourHand = document.getElementById('hour-hand');
+  const minuteHand = document.getElementById('minute-hand');
+  const secondHand = document.getElementById('second-hand');
+
+  function update() {
+    const now = new Date();
+    const h = now.getHours() % 12;
+    const m = now.getMinutes();
+    const s = now.getSeconds();
+    const ms = now.getMilliseconds();
+
+    // Continuous angles
+    const secAngle = (s + ms / 1000) * 6;           // 360/60 = 6 deg per sec
+    const minAngle = (m + (s + ms / 1000) / 60) * 6;  // 6 deg per min
+    const hrAngle = (h + (m + (s + ms / 1000) / 60) / 60) * 30; // 30 deg per hour
+
+    hourHand.setAttribute('transform', `rotate(${hrAngle}, ${CX}, ${CY})`);
+    minuteHand.setAttribute('transform', `rotate(${minAngle}, ${CX}, ${CY})`);
+    secondHand.setAttribute('transform', `rotate(${secAngle}, ${CX}, ${CY})`);
+
+    requestAnimationFrame(update);
+  }
+
+  requestAnimationFrame(update);
+})();
+</script>
+
+</body>
+</html>
